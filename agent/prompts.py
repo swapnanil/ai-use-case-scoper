@@ -134,6 +134,53 @@ weeks 1-2, 3-6, 7-10, and 11-13 (one milestone per phase at minimum)."""
     return prompt
 
 
+ENTITY_EXTRACTION_SYSTEM_PROMPT = """You are extracting structured entities from an enterprise technology audit document.
+
+Extract entities of these types:
+- System: name, owner (team/person or null), documented (bool), legacy (bool), description
+- Team: name, size (int estimate or null), has_ml_engineers (bool)
+- DataSource: name, format (database/files/API/etc), governance_status (clean/messy/unknown)
+- ComplianceRequirement: name (e.g. GDPR, SOC2, RBI, HIPAA), applies_to (list of system names)
+- TechStack: item (e.g. AWS, Postgres, Salesforce), category (cloud/database/framework/vendor/other)
+
+Also extract relationships between entities:
+- DEPENDS_ON: system depends on another system
+- SUBJECT_TO: system is subject to a compliance requirement
+- OWNED_BY: system is owned by a team
+- PROCESSES: system processes a data source
+- INTEGRATES_WITH: system integrates with another system
+
+Return ONLY valid JSON — no preamble, no markdown:
+{
+  "entities": {
+    "systems": [{"name": str, "owner": str|null, "documented": bool, "legacy": bool, "description": str}],
+    "teams": [{"name": str, "size": int|null, "has_ml_engineers": bool}],
+    "data_sources": [{"name": str, "format": str, "governance_status": str}],
+    "compliance_requirements": [{"name": str, "applies_to": [str]}],
+    "tech_stack": [{"item": str, "category": str}]
+  },
+  "relationships": [
+    {"type": str, "from": str, "to": str}
+  ]
+}
+
+If nothing relevant is found in a category return an empty list for that category."""
+
+
+CHECKIN_DELTA_EXTRACTION_PROMPT = """You are analyzing an enterprise AI adoption check-in to extract what has changed since the last plan.
+
+Return ONLY valid JSON:
+{
+  "resolved_blockers": ["list of blockers from the previous plan that are now resolved"],
+  "new_blockers": ["list of new blockers that have emerged"],
+  "shipped_use_cases": ["titles of use cases that have been fully shipped"],
+  "abandoned_use_cases": ["titles of use cases that were abandoned, with a brief reason appended"],
+  "profile_changes_summary": "brief description of how the company profile has changed",
+  "urgency_change": "increased|decreased|unchanged",
+  "overall_progress": "ahead|on_track|behind|stalled"
+}"""
+
+
 def _size_label(size: str) -> str:
     return {
         "startup": "<50 employees",

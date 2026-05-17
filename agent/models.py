@@ -1,5 +1,7 @@
-from typing import Literal
-from pydantic import BaseModel, field_validator
+from typing import Any, Literal
+from uuid import UUID, uuid4
+from datetime import datetime
+from pydantic import BaseModel, Field, field_validator
 
 
 class CompanyProfile(BaseModel):
@@ -98,3 +100,72 @@ class AIRoadmap(BaseModel):
     readiness_score: int
     readiness_blockers: list[str]
     readiness_accelerators: list[str]
+
+
+# ---------------------------------------------------------------------------
+# v2: document ingestion
+# ---------------------------------------------------------------------------
+
+class GraphExtractionResult(BaseModel):
+    extracted_profile: CompanyProfile
+    confidence_scores: dict[str, float]
+    low_confidence_fields: list[str]
+    extracted_entities: list[dict]
+    extraction_warnings: list[str]
+
+
+# ---------------------------------------------------------------------------
+# v2: company memory & session persistence
+# ---------------------------------------------------------------------------
+
+class Company(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    name: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_active: datetime = Field(default_factory=datetime.utcnow)
+    profile: CompanyProfile | None = None
+
+
+class ScopingSession(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    company_id: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    input_profile: CompanyProfile
+    roadmap: AIRoadmap
+    session_type: Literal["initial", "checkin", "evolved"]
+    checkin_notes: str | None = None
+    parent_session_id: str | None = None
+
+
+class PlanOutcome(BaseModel):
+    session_id: str
+    use_case_title: str
+    status: Literal["not_started", "in_progress", "shipped", "abandoned", "blocked"]
+    blocker: str | None = None
+    actual_timeline: str | None = None
+    notes: str | None = None
+    recorded_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ---------------------------------------------------------------------------
+# v2: iterative plan evolution
+# ---------------------------------------------------------------------------
+
+class CheckinInput(BaseModel):
+    company_id: str
+    parent_session_id: str
+    notes: str
+    outcome_updates: list[PlanOutcome] = []
+    profile_changes: dict[str, Any] = {}
+    new_constraints: list[str] = []
+    timeline_pressure: Literal[
+        "experimental", "pilot_in_90_days", "production_in_6_months", "urgent"
+    ] | None = None
+
+
+class EvolvedAIRoadmap(AIRoadmap):
+    evolution_summary: str
+    dropped_use_cases: list[str] = []
+    added_use_cases: list[UseCase] = []
+    milestone_shifts: list[dict] = []
+    readiness_score_delta: int = 0

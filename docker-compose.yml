@@ -7,6 +7,11 @@ services:
     volumes:
       - ./examples:/app/examples
       - ./outputs:/app/outputs
+      - ./uploads:/app/uploads
+      - chroma_data:/app/chroma_store
+    depends_on:
+      db:
+        condition: service_healthy
 
   cli:
     build: .
@@ -16,5 +21,30 @@ services:
     volumes:
       - ./examples:/app/examples
       - ./outputs:/app/outputs
+      - ./uploads:/app/uploads
+      - chroma_data:/app/chroma_store
     entrypoint: ["python", "main.py"]
     profiles: ["cli"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: scoper
+      POSTGRES_USER: scoper
+      POSTGRES_PASSWORD: scoper
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scoper -d scoper"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+  chroma_data:

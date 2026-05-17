@@ -27,6 +27,9 @@ logging.basicConfig(
 app = typer.Typer(help="Enterprise AI Use Case Scoper — by Swapnanil Saha")
 console = Console()
 
+PRE_FILL_THRESHOLD = 0.7
+ALWAYS_ASK = {"ai_ambition", "pain_points", "timeline_pressure", "budget_tier"}
+
 
 def _roadmap_to_markdown(roadmap) -> str:
     lines = []
@@ -214,29 +217,184 @@ def _render_rich(roadmap) -> None:
             console.print(f"  ? {q}")
 
 
-def _interactive_mode() -> dict:
+def _run_doc_ingestion():
+    """Load user-provided documents, build entity graph, extract profile. Returns GraphExtractionResult or None."""
+    from ingestion.extractor import extract_profile
+    from ingestion.graph_builder import build_graph
+    from ingestion.loader import SUPPORTED_EXTENSIONS, load_file
+
+    console.print(f"\n  [dim]Supported formats: {', '.join(sorted(SUPPORTED_EXTENSIONS))}[/dim]")
+    console.print("  Enter file paths (one per line, blank line to finish):")
+    paths = []
+    while True:
+        path_str = Prompt.ask("  > ", default="")
+        if not path_str:
+            break
+        p = Path(path_str.strip().strip("\"'"))
+        if not p.exists():
+            console.print(f"  [yellow]⚠ File not found: {p}[/yellow]")
+        else:
+            paths.append(p)
+
+    if not paths:
+        return None
+
+    all_chunks = []
+    for p in paths:
+        try:
+            chunks = load_file(p)
+            all_chunks.extend(chunks)
+            console.print(f"  [green]✓ Loaded {p.name} ({len(chunks)} chunks)[/green]")
+        except Exception as e:
+            console.print(f"  [yellow]⚠ Could not load {p.name}: {e}[/yellow]")
+
+    if not all_chunks:
+        return None
+
+    model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+    try:
+        with console.status("[cyan]Building entity graph from documents...[/cyan]", spinner="dots"):
+            G = build_graph(all_chunks, model=model)
+        return extract_profile(G)
+    except Exception as e:
+        console.print(f"  [yellow]⚠ Extraction failed: {e} — proceeding without pre-fill[/yellow]")
+        return None
+
+
+def _show_extraction_summary(result) -> None:
+    """Print a Rich table of extracted fields and confidence scores."""
+    if result.extraction_warnings:
+        console.print()
+        for w in result.extraction_warnings:
+            console.print(f"  [yellow]⚠ {w}[/yellow]")
+
+    table = Table(show_header=True, header_style="bold dim", box=None, padding=(0, 2))
+    table.add_column("Field", style="cyan", min_width=26)
+    table.add_column("Extracted Value")
+    table.add_column("Confidence", justify="right")
+
+    for field, conf in sorted(result.confidence_scores.items()):
+        if conf <= 0.0:
+            continue
+        value = getattr(result.extracted_profile, field, "—")
+        if isinstance(value, list):
+            value = ", ".join(str(v) for v in value) or "—"
+        elif value is None:
+            value = "—"
+        else:
+            value = str(value)
+        style = "green" if conf >= PRE_FILL_THRESHOLD else "yellow"
+        table.add_row(field, value[:60], f"[{style}]{conf:.0%}[/{style}]")
+
+    console.print(Panel(table, title="[bold]Document Extraction Summary[/bold]", border_style="cyan"))
+    console.print(
+        f"  [dim]Fields in [green]green[/green] (≥{PRE_FILL_THRESHOLD:.0%} confidence) "
+        "will be offered as pre-fills below.[/dim]\n"
+    )
+
+
+def _prefill_note(prefill_display: str, conf: float) -> None:
+    console.print(
+        f"  [dim]Pre-filled from docs: [cyan]{prefill_display}[/cyan] ({conf:.0%} confidence)"
+        " — press Enter to accept[/dim]"
+    )
+
+
+def _ask_or_prefill_text(field_name: str, result, prompt: str = "> ") -> str:
+    """Text field: use pre-filled value as default if confidence >= threshold."""
+    if result and field_name not in ALWAYS_ASK:
+        conf = result.confidence_scores.get(field_name, 0.0)
+        prefill = getattr(result.extracted_profile, field_name, None)
+        if conf >= PRE_FILL_THRESHOLD and prefill:
+            _prefill_note(str(prefill), conf)
+            return Prompt.ask(prompt, default=str(prefill))
+    return Prompt.ask(prompt)
+
+
+def _ask_or_prefill_choice(
+    field_name: str,
+    result,
+    choices: list,
+    choice_map: dict,
+    prompt: str = "> ",
+) -> str:
+    """Choice field: highlight the pre-filled numbered option if confidence >= threshold."""
+    if result and field_name not in ALWAYS_ASK:
+        conf = result.confidence_scores.get(field_name, 0.0)
+        prefill = getattr(result.extracted_profile, field_name, None)
+        if conf >= PRE_FILL_THRESHOLD and prefill is not None:
+            reverse_map = {v: k for k, v in choice_map.items()}
+            prefill_key = reverse_map.get(prefill)
+            if prefill_key:
+                _prefill_note(f"({prefill_key}) {prefill}", conf)
+                raw = Prompt.ask(prompt, choices=choices, default=prefill_key)
+                return choice_map[raw]
+    return choice_map[Prompt.ask(prompt, choices=choices)]
+
+
+def _ask_or_prefill_bool(field_name: str, result, prompt: str = "> ") -> bool:
+    """Bool field: set default to pre-filled value if confidence >= threshold."""
+    if result and field_name not in ALWAYS_ASK:
+        conf = result.confidence_scores.get(field_name, 0.0)
+        prefill = getattr(result.extracted_profile, field_name, None)
+        if conf >= PRE_FILL_THRESHOLD and prefill is not None:
+            _prefill_note(str(prefill), conf)
+            return Confirm.ask(prompt, default=bool(prefill))
+    return Confirm.ask(prompt)
+
+
+def _ask_or_prefill_list(field_name: str, result, item_prompt: str = "> ") -> list:
+    """List field: offer pre-filled list for one-shot accept, or fall through to manual entry."""
+    if result and field_name not in ALWAYS_ASK:
+        conf = result.confidence_scores.get(field_name, 0.0)
+        prefill = getattr(result.extracted_profile, field_name, None)
+        if conf >= PRE_FILL_THRESHOLD and prefill:
+            _prefill_note(", ".join(str(v) for v in prefill), conf)
+            if Confirm.ask("  Accept this list?", default=True):
+                return list(prefill)
+    items = []
+    while True:
+        line = Prompt.ask(item_prompt, default="")
+        if not line:
+            break
+        items.append(line)
+    return items
+
+
+def _interactive_mode(skip_ingest: bool = False) -> dict:
     console.print(Rule("Enterprise AI Use Case Scoper — by Swapnanil Saha"))
     console.print()
 
+    extraction_result = None
+
+    if not skip_ingest:
+        console.print(
+            "[bold][Optional][/bold] Do you have internal tech docs or audit reports to share?\n"
+            "  (PDF, DOCX, TXT — we'll extract your tech profile and pre-fill where confident)"
+        )
+        if Confirm.ask("> ", default=False):
+            extraction_result = _run_doc_ingestion()
+            if extraction_result:
+                _show_extraction_summary(extraction_result)
+
     # [1/8] Industry
     console.print("[bold][1/8][/bold] What industry is your company in?")
-    industry = Prompt.ask("> ")
+    industry = _ask_or_prefill_text("industry", extraction_result)
 
     # [2/8] Company size
     console.print("\n[bold][2/8][/bold] Company size?")
     console.print("  (1) Startup    (<50 employees)")
     console.print("  (2) SMB        (50–500)")
-    console.print("  (3) Mid-market (500–5000)")
-    console.print("  (4) Enterprise (5000+)")
+    console.print("  (3) Mid-market (500–5,000)")
+    console.print("  (4) Enterprise (5,000+)")
     size_map = {"1": "startup", "2": "smb", "3": "mid_market", "4": "enterprise"}
-    size_choice = Prompt.ask("> ", choices=["1", "2", "3", "4"])
-    company_size = size_map[size_choice]
+    company_size = _ask_or_prefill_choice("company_size", extraction_result, ["1", "2", "3", "4"], size_map)
 
-    # [3/8] AI ambition
+    # [3/8] AI ambition — ALWAYS_ASK
     console.print("\n[bold][3/8][/bold] Describe what you want AI to do for you (be as vague or specific as you like):")
     ai_ambition = Prompt.ask("> ")
 
-    # [4/8] Pain points
+    # [4/8] Pain points — ALWAYS_ASK
     console.print("\n[bold][4/8][/bold] What are your top 3 business pain points right now?")
     console.print("  (enter one per line, blank line to finish)")
     pain_points = []
@@ -252,18 +410,23 @@ def _interactive_mode() -> dict:
     console.print("  (2) Medium — mostly centralised, some gaps")
     console.print("  (3) High   — clean pipelines, good governance")
     dm_map = {"1": "low", "2": "medium", "3": "high"}
-    dm_choice = Prompt.ask("> ", choices=["1", "2", "3"])
-    data_maturity = dm_map[dm_choice]
+    data_maturity = _ask_or_prefill_choice("data_maturity", extraction_result, ["1", "2", "3"], dm_map)
 
     # [6/8] Compliance
     console.print("\n[bold][6/8][/bold] Any compliance requirements? (GDPR, HIPAA, SOC2, etc. — or 'none')")
-    compliance_raw = Prompt.ask("> ")
-    if compliance_raw.lower() in ("none", ""):
-        compliance_requirements = []
+    if (
+        extraction_result
+        and extraction_result.confidence_scores.get("compliance_requirements", 0.0) >= PRE_FILL_THRESHOLD
+    ):
+        compliance_requirements = _ask_or_prefill_list("compliance_requirements", extraction_result)
     else:
-        compliance_requirements = [c.strip() for c in compliance_raw.replace(",", " ").split() if c.strip()]
+        compliance_raw = Prompt.ask("> ")
+        if compliance_raw.lower() in ("none", ""):
+            compliance_requirements = []
+        else:
+            compliance_requirements = [c.strip() for c in compliance_raw.replace(",", " ").split() if c.strip()]
 
-    # [7/8] Timeline pressure
+    # [7/8] Timeline pressure — ALWAYS_ASK
     console.print("\n[bold][7/8][/bold] What's your timeline pressure?")
     console.print("  (1) Experimental — just exploring")
     console.print("  (2) Pilot in 90 days")
@@ -275,16 +438,21 @@ def _interactive_mode() -> dict:
 
     # [8/8] ML engineers
     console.print("\n[bold][8/8][/bold] Do you have ML engineers on the team?")
-    has_ml = Confirm.ask("> ")
+    has_ml = _ask_or_prefill_bool("has_ml_engineers", extraction_result)
+
+    def _confident(field: str):
+        return extraction_result and extraction_result.confidence_scores.get(field, 0.0) >= PRE_FILL_THRESHOLD
 
     return {
         "industry": industry,
         "company_size": company_size,
         "geography": None,
-        "tech_stack": [],
+        "tech_stack": list(extraction_result.extracted_profile.tech_stack) if _confident("tech_stack") else [],
         "data_maturity": data_maturity,
-        "ai_experience": "none",
-        "engineering_team_size": 10,
+        "ai_experience": extraction_result.extracted_profile.ai_experience if _confident("ai_experience") else "none",
+        "engineering_team_size": (
+            extraction_result.extracted_profile.engineering_team_size if _confident("engineering_team_size") else 10
+        ),
         "has_ml_engineers": has_ml,
         "budget_tier": "growth",
         "ai_ambition": ai_ambition,
@@ -308,13 +476,14 @@ def scope(
     format: str = typer.Option("rich", "--format", help="Output format: rich/json/markdown/html"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file path"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show pre-scoring context"),
+    no_ingest: bool = typer.Option(False, "--no-ingest", help="Skip the optional document ingestion step in interactive mode"),
 ) -> None:
     """Scope an enterprise AI use case and generate a prioritised roadmap."""
     from agent.models import CompanyProfile
     from agent.scoper import scope_company
 
     if interactive:
-        profile_data = _interactive_mode()
+        profile_data = _interactive_mode(skip_ingest=no_ingest)
         console.print("\n[bold cyan]Scoping your AI roadmap...[/bold cyan]\n")
     elif file:
         profile_data = json.loads(file.read_text())
@@ -346,6 +515,125 @@ def scope(
         roadmap = scope_company(profile, verbose=verbose)
 
     _render_output(roadmap, format, output, verbose)
+
+
+@app.command()
+def checkin(
+    company_id: str = typer.Argument(..., help="Company ID from a previous scoping session"),
+    session_id: str = typer.Option(..., "--session-id", "-s", help="Parent session ID to evolve"),
+    file: Optional[Path] = typer.Option(None, "--file", "-f", help="Path to checkin JSON file"),
+    interactive: bool = typer.Option(False, "--interactive", "-i", help="Interactive checkin mode"),
+    format: str = typer.Option("rich", "--format", help="Output format: rich/json/markdown/html"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file path"),
+) -> None:
+    """Run a check-in against a previous plan and generate an evolved roadmap."""
+    from agent.models import CheckinInput, PlanOutcome
+    from pipeline.checkin_graph import run_checkin
+
+    if interactive:
+        checkin_data = _interactive_checkin(company_id, session_id)
+    elif file:
+        checkin_data = json.loads(file.read_text())
+    else:
+        console.print("[red]Provide --interactive or --file[/red]")
+        raise typer.Exit(1)
+
+    try:
+        checkin_input = CheckinInput(**checkin_data)
+    except Exception as e:
+        console.print(f"[red]Invalid checkin input: {e}[/red]")
+        raise typer.Exit(1)
+
+    with console.status("[cyan]Running check-in pipeline...[/cyan]", spinner="dots"):
+        evolved = run_checkin(checkin_input)
+
+    console.print(f"\n[bold green]Readiness score delta: {evolved.readiness_score_delta:+d}[/bold green]")
+    if evolved.evolution_summary:
+        console.print(Panel(evolved.evolution_summary, title="What Changed", border_style="yellow"))
+
+    _render_output(evolved, format, output, verbose=False)
+
+
+@app.command()
+def history(
+    company_id: str = typer.Argument(..., help="Company ID to view session history"),
+) -> None:
+    """View all scoping sessions for a company."""
+    from agent.memory import get_company, get_company_sessions
+
+    company = get_company(company_id)
+    if not company:
+        console.print(f"[red]Company '{company_id}' not found[/red]")
+        raise typer.Exit(1)
+
+    sessions = get_company_sessions(company_id)
+    if not sessions:
+        console.print("[yellow]No sessions found for this company[/yellow]")
+        return
+
+    console.print(Rule(f"[bold]Session History — {company['name']}[/bold]"))
+
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("#", style="dim", width=3)
+    table.add_column("Session ID", style="cyan", width=38)
+    table.add_column("Type", width=10)
+    table.add_column("Date", width=12)
+    table.add_column("Readiness", width=10)
+    table.add_column("Recommended First Project")
+
+    for i, s in enumerate(sessions, 1):
+        score = s.get("readiness_score")
+        score_str = f"{score}/100" if score is not None else "—"
+        table.add_row(
+            str(i),
+            s["id"],
+            s["session_type"],
+            s["created_at"][:10],
+            score_str,
+            (s.get("recommended_first_project") or "—")[:60],
+        )
+
+    console.print(table)
+
+
+def _interactive_checkin(company_id: str, session_id: str) -> dict:
+    console.print(Rule("AI Use Case Scoper — Check-in"))
+    console.print()
+
+    console.print("[bold][1/4][/bold] Describe what happened since the last plan:")
+    console.print("  (progress made, blockers hit, things that changed)")
+    notes = Prompt.ask("> ")
+
+    console.print("\n[bold][2/4][/bold] Any new compliance requirements or constraints? (or 'none')")
+    constraints_raw = Prompt.ask("> ")
+    new_constraints = (
+        []
+        if constraints_raw.lower() in ("none", "")
+        else [c.strip() for c in constraints_raw.replace(",", " ").split() if c.strip()]
+    )
+
+    console.print("\n[bold][3/4][/bold] Did your timeline pressure change?")
+    console.print("  (1) No change")
+    console.print("  (2) Pilot in 90 days")
+    console.print("  (3) Production in 6 months")
+    console.print("  (4) Urgent")
+    tl_map = {"1": None, "2": "pilot_in_90_days", "3": "production_in_6_months", "4": "urgent"}
+    tl_choice = Prompt.ask("> ", choices=["1", "2", "3", "4"])
+    timeline_pressure = tl_map[tl_choice]
+
+    console.print("\n[bold][4/4][/bold] Have you hired ML engineers since the last session? (yes/no)")
+    ml_hired = Confirm.ask("> ")
+    profile_changes = {"has_ml_engineers": True} if ml_hired else {}
+
+    return {
+        "company_id": company_id,
+        "parent_session_id": session_id,
+        "notes": notes,
+        "outcome_updates": [],
+        "new_constraints": new_constraints,
+        "profile_changes": profile_changes,
+        "timeline_pressure": timeline_pressure,
+    }
 
 
 if __name__ == "__main__":

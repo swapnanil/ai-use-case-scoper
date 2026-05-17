@@ -207,9 +207,9 @@
     <div class="container">
       <div class="hero-inner">
         <div class="hero-left">
-          <div class="tool-badge">Enterprise AI · Strategy</div>
+          <div class="tool-badge">Enterprise AI · Strategy · LangGraph</div>
           <h1 class="hero-title">AI Use Case<br><span class="accent">Scoper</span></h1>
-          <p class="hero-desc">"Turn 'we want to do AI' into a prioritised roadmap with a recommended first project and a 90-day plan — before you write a line of code."</p>
+          <p class="hero-desc">"8 guided questions. Share your tech audit doc if you have one — we'll pre-fill the technical context. Come back in 90 days: the plan evolves with you."</p>
           <div class="btn-group">
             <a href="https://github.com/swapnanil/ai-use-case-scoper" target="_blank" class="btn-primary">View on GitHub</a>
             <a href="https://github.com/swapnanil/ai-use-case-scoper#api-usage" target="_blank" class="btn-secondary">Read the Docs</a>
@@ -221,25 +221,25 @@
             <div class="terminal-bar">
               <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
             </div>
-            <pre><span class="t-prompt">$</span> <span class="t-cmd">docker-compose run --rm -it cli scope</span> \
-  <span class="t-flag">--interactive</span>
+            <pre><span class="t-prompt">$</span> <span class="t-cmd">python main.py scope</span> <span class="t-flag">--interactive</span>
 
-<span class="t-cmt"># 8-question guided mode…</span>
-<span class="t-cmt"># Pre-scorer: readiness 62/100</span>
+<span class="t-cmt"># Do you have a tech audit doc to share? [y/N]</span>
+<span class="t-cmt"># > y  →  tech_audit.pdf (42 chunks)</span>
+<span class="t-cmt"># Graph RAG: 47 entities · pre-filling 5 fields</span>
+<span class="t-cmt"># [3/8] AI ambition? → always asked</span>
 
-<span class="t-head">## AI Use Case Scoping Report</span>
 <span class="t-key">readiness_score</span><span class="t-muted">:</span> <span class="t-val">62 / 100</span>
+<span class="t-key">recommended</span><span class="t-muted">:</span> <span class="t-str">Internal Doc Q&amp;A</span>
+<span class="t-dim">session saved · id: a3f9…</span>
 
-<span class="t-head">Recommended First Project</span>
-<span class="t-str">Automated Weekly Campaign
-Report Generator</span>
-<span class="t-dim">feasibility: 9 · roi: 9</span>
-<span class="t-dim">timeline: 2–3 weeks · cost: $</span>
+<span class="t-cmt"># 90 days later…</span>
+<span class="t-prompt">$</span> <span class="t-cmd">python main.py checkin</span> <span class="t-val">a3f9…</span> <span class="t-flag">--interactive</span>
 
-<span class="t-head">Quick Win (Day 1)</span>
-<span class="t-str">Claude API for product
-description drafts — zero
-infra, value in one day</span></pre>
+<span class="t-cmt"># LangGraph: 6 nodes · delta extracted</span>
+<span class="t-key">readiness_score</span><span class="t-muted">:</span> <span class="t-val">75 / 100</span>
+<span class="t-key">delta</span><span class="t-muted">:</span> <span class="t-str">+13</span>
+<span class="t-key">evolution</span><span class="t-muted">:</span> <span class="t-dim">Doc Q&amp;A shipped. ML hire
+unlocked contract review.</span></pre>
           </div>
         </div>
       </div>
@@ -257,7 +257,7 @@ infra, value in one day</span></pre>
           <p class="problem-statement">Every enterprise AI engagement starts the same way: leadership wants AI, nobody agrees on what for, and the first project gets chosen based on whoever makes the loudest argument in a workshop. Six months and a failed pilot later, the appetite for AI has halved.</p>
         </div>
         <div class="problem-right">
-          <p class="problem-solution">AI Use Case Scoper scores every candidate use case on feasibility, ROI, and risk — then returns a ranked list with one recommended first project and a milestone-by-milestone 90-day plan. If the company isn't ready for AI, it says so and tells them what to fix first. No over-promising.</p>
+          <p class="problem-solution">AI Use Case Scoper runs 8 guided questions to understand what a company wants from AI. Share a tech audit doc if you have one — Graph RAG pre-fills the technical context so you spend the conversation on what matters: AI ambition, pain points, and priorities. The output is a ranked use case list with a recommended first project and a 90-day plan. Come back three months later: LangGraph compares reality against the roadmap and generates an evolved plan with an explicit delta. No starting from scratch.</p>
         </div>
       </div>
     </div>
@@ -270,29 +270,29 @@ infra, value in one day</span></pre>
     <div class="container">
       <div class="section-header reveal">
         <div class="section-tag">Architecture</div>
-        <h2 class="section-title">Profile first.<br>Then scope.</h2>
-        <p class="section-sub">Pre-scoring from rules calibrates the LLM's recommendations to actual company readiness — not theoretical best-case scenarios.</p>
+        <h2 class="section-title">Questions first.<br>Docs welcome.</h2>
+        <p class="section-sub">v2 adds hybrid document enrichment, company memory, and a LangGraph check-in pipeline — so the plan evolves as the company does.</p>
       </div>
       <div class="arch-row">
         <div class="arch-step reveal">
           <div class="arch-num"><div class="arch-dot"></div>01</div>
-          <div class="arch-label">Profile</div>
-          <div class="arch-desc">Industry, company size, AI ambition, pain points, data maturity, ML team presence, timeline pressure</div>
+          <div class="arch-label">Ingest</div>
+          <div class="arch-desc">Optional first step: share a PDF, DOCX, or CSV. Graph RAG (NetworkX + ChromaDB) extracts systems, teams, compliance, and tech stack — pre-filling technical fields where confidence ≥ 70%</div>
         </div>
         <div class="arch-step reveal">
           <div class="arch-num"><div class="arch-dot"></div>02</div>
           <div class="arch-label">Score</div>
-          <div class="arch-desc">Pre-scorer computes AI readiness context from rule-based heuristics before any LLM call is made</div>
+          <div class="arch-desc">Profile assembled with per-field confidence scores. Low-confidence fields surfaced for human review. Pre-scorer applies rule-based readiness modifiers</div>
         </div>
         <div class="arch-step reveal">
           <div class="arch-num"><div class="arch-dot"></div>03</div>
           <div class="arch-label">Scope</div>
-          <div class="arch-desc">Claude applies industry heuristics to generate and rank use cases by feasibility, ROI, and risk</div>
+          <div class="arch-desc">Claude applies industry heuristics to generate and rank use cases by feasibility, ROI, and risk. Session persisted to Postgres with company memory</div>
         </div>
         <div class="arch-step reveal">
           <div class="arch-num"><div class="arch-dot"></div>04</div>
-          <div class="arch-label">Roadmap</div>
-          <div class="arch-desc">Prioritised use case list, recommended first project, and 90-day milestone plan with success criteria</div>
+          <div class="arch-label">Evolve</div>
+          <div class="arch-desc">90 days later: LangGraph pipeline compares check-in notes against the original roadmap, re-scores use cases, and generates an evolved plan with explicit delta</div>
         </div>
       </div>
     </div>
@@ -306,32 +306,32 @@ infra, value in one day</span></pre>
       <div class="section-header reveal">
         <div class="section-tag">Features</div>
         <h2 class="section-title">Honest.<br>Actionable.</h2>
-        <p class="section-sub">Built for conversations with non-technical stakeholders. Every output is specific enough to put in a board deck.</p>
+        <p class="section-sub">Built for conversations with non-technical stakeholders. Every output is specific enough to put in a board deck — and specific enough to revisit in 90 days.</p>
       </div>
       <div class="features-grid">
         <div class="feat-card reveal">
-          <div class="feat-title">Interactive 8-Question CLI</div>
-          <div class="feat-desc">Guided mode walks through the company profile step by step. Designed for non-technical stakeholders — no JSON files, no engineering support required to run the audit.</div>
+          <div class="feat-title">Hybrid Document Enrichment</div>
+          <div class="feat-desc">At the start of the 8-question flow, the CLI optionally asks: "Do you have a tech audit doc?" If yes, Graph RAG (NetworkX + ChromaDB) extracts technical context from the PDF/DOCX and pre-fills fields where confidence ≥ 70%. Qualitative questions — AI ambition, pain points, timeline — are always asked. Docs enrich; they don't replace the conversation.</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-title">LangGraph Check-in Pipeline</div>
+          <div class="feat-desc">Come back 90 days later. A stateful LangGraph pipeline compares your check-in notes against the original roadmap: re-scores use cases, shifts milestones, and generates an evolved plan with an explicit delta summary.</div>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-title">Company Memory</div>
+          <div class="feat-desc">Every scoping session is persisted. Previous readiness scores, recommended projects, and resolved blockers are injected as context into future sessions — so recommendations compound over time, not repeat.</div>
         </div>
         <div class="feat-card reveal">
           <div class="feat-title">Use Case Prioritisation</div>
-          <div class="feat-desc">Every use case scored on feasibility, ROI, and risk — ordered by weighted priority score. Account managers and product leads can read the output without needing a data scientist to interpret it.</div>
+          <div class="feat-desc">Every use case scored on feasibility, ROI, and risk — ordered by weighted priority score. Output is readable by product leads and CTOs without a data scientist to interpret it.</div>
         </div>
         <div class="feat-card reveal">
           <div class="feat-title">Industry-Specific Heuristics</div>
-          <div class="feat-desc">Legal and finance → document analysis. E-commerce → support automation. Ad-tech → creative generation and performance diagnosis. Recommendations are grounded in what actually works in each vertical.</div>
+          <div class="feat-desc">Legal and finance → document analysis. E-commerce → support automation. Ad-tech → creative generation and campaign diagnosis. Recommendations are grounded in what actually ships in each vertical.</div>
         </div>
         <div class="feat-card reveal">
-          <div class="feat-title">Readiness Scoring</div>
-          <div class="feat-desc">1–100 overall AI readiness with explicit blockers and accelerators. Teams know not just where they are, but which specific gaps to close first before starting the recommended project.</div>
-        </div>
-        <div class="feat-card reveal">
-          <div class="feat-title">90-Day Roadmap</div>
-          <div class="feat-desc">Milestone-by-milestone plan for the recommended first project — with success criteria per phase. Week 1, Week 4, Week 8, Week 12 — concrete enough to put into a project tracker immediately.</div>
-        </div>
-        <div class="feat-card reveal">
-          <div class="feat-title">Honest Scoping</div>
-          <div class="feat-desc">If the company is not ready for AI, the tool says so directly and tells them what to fix first. No inflated readiness scores, no projects recommended for companies that lack the data or team to execute them.</div>
+          <div class="feat-title">Jira / ClickUp Export</div>
+          <div class="feat-desc">The 90-day roadmap exports directly to Jira (epics + stories) or ClickUp (tasks with phase tags) via REST — no SDK dependency, no bidirectional sync overhead.</div>
         </div>
       </div>
     </div>
@@ -351,17 +351,25 @@ infra, value in one day</span></pre>
         <pre><span class="kw">git</span> clone https://github.com/swapnanil/ai-use-case-scoper
 <span class="kw">cd</span> ai-use-case-scoper
 <span class="kw">cp</span> .env.example .env   <span class="cmt"># add your ANTHROPIC_API_KEY</span>
-docker-compose up api</pre>
+docker-compose up api  <span class="cmt"># starts API + Postgres</span></pre>
       </div>
       <div class="qs-gap reveal">
-        <div class="qs-label">CLI — interactive guided scoping</div>
+        <div class="qs-label">interactive hybrid mode — 8 questions + optional doc enrichment</div>
         <pre>docker-compose run --rm -it cli scope --interactive</pre>
       </div>
       <div class="qs-gap reveal">
-        <div class="qs-label">CLI — scope from JSON profile</div>
-        <pre>docker-compose run cli scope \
-  --file examples/adtech_smb_profile.json \
-  --format markdown</pre>
+        <div class="qs-label">skip the doc prompt — pure 8-question flow</div>
+        <pre>docker-compose run --rm -it cli scope --interactive --no-ingest</pre>
+      </div>
+      <div class="qs-gap reveal">
+        <div class="qs-label">v2 — run a check-in 90 days later (LangGraph pipeline)</div>
+        <pre>python main.py checkin &lt;company-id&gt; \
+  --session-id &lt;session-id&gt; --interactive</pre>
+      </div>
+      <div class="qs-gap reveal">
+        <div class="qs-label">v2 — export roadmap to Jira</div>
+        <pre><span class="kw">curl</span> -X POST http://localhost:8000/sessions/&lt;id&gt;/export/jira \
+  -d '{"jira_base_url": "...", "project_key": "AI", "api_token": "..."}'</pre>
       </div>
     </div>
   </section>
@@ -373,44 +381,42 @@ docker-compose up api</pre>
     <div class="container">
       <div class="section-header reveal">
         <div class="section-tag">Example</div>
-        <h2 class="section-title">Ambition in.<br>Roadmap out.</h2>
+        <h2 class="section-title">Questions in.<br>Evolved plan out.</h2>
       </div>
       <div class="example-grid">
         <div class="reveal">
-          <div class="ex-label">Input — <span>company profile JSON</span></div>
+          <div class="ex-label">Initial scope — <span>hybrid 8-question flow</span></div>
           <div class="terminal">
-            <pre style="font-size: 11px; line-height: 1.75; white-space: pre-wrap;"><span class="t-muted">{</span>
-  <span class="t-key">"industry"</span><span class="t-muted">:</span> <span class="t-str">"Ad-Tech"</span><span class="t-muted">,</span>
-  <span class="t-key">"company_size"</span><span class="t-muted">:</span> <span class="t-str">"smb"</span><span class="t-muted">,</span>
-  <span class="t-key">"ai_ambition"</span><span class="t-muted">:</span>
-    <span class="t-str">"Help AMs work better,
-     automate weekly reporting"</span><span class="t-muted">,</span>
-  <span class="t-key">"data_maturity"</span><span class="t-muted">:</span>
-    <span class="t-str">"medium"</span><span class="t-muted">,</span>
-  <span class="t-key">"has_ml_engineers"</span><span class="t-muted">:</span>
-    <span class="t-str">false</span><span class="t-muted">,</span>
-  <span class="t-key">"timeline"</span><span class="t-muted">:</span>
-    <span class="t-str">"pilot_in_90_days"</span>
-<span class="t-muted">}</span></pre>
+            <pre style="font-size: 11px; line-height: 1.75; white-space: pre-wrap;"><span class="t-cmt"># Do you have tech docs to share? y</span>
+<span class="t-cmt"># Graph RAG: 47 entities extracted</span>
+<span class="t-key">pre_filled</span><span class="t-muted">:</span>
+  <span class="t-str">tech_stack, compliance_requirements,
+  has_ml_engineers, engineering_team_size</span>
+<span class="t-key">always_asked</span><span class="t-muted">:</span>
+  <span class="t-str">ai_ambition, pain_points, timeline</span>
+
+<span class="t-cmt"># POST /scope → scoping run</span>
+<span class="t-key">readiness_score</span><span class="t-muted">:</span> <span class="t-val">62</span>
+<span class="t-key">recommended</span><span class="t-muted">:</span>
+  <span class="t-str">"Automated Report Generator"</span>
+<span class="t-key">session_id</span><span class="t-muted">:</span> <span class="t-str">"a3f9c…"</span></pre>
           </div>
         </div>
         <div class="reveal">
-          <div class="ex-label">Output — <span>scoping result excerpt</span></div>
+          <div class="ex-label">90 days later — <span>evolved plan (LangGraph)</span></div>
           <div class="terminal">
-            <pre style="font-size: 11.5px; line-height: 1.7;"><span class="t-key">readiness_score</span><span class="t-muted">:</span> <span class="t-val">62</span>
+            <pre style="font-size: 11.5px; line-height: 1.7;"><span class="t-cmt"># POST /companies/:id/checkin</span>
+<span class="t-key">readiness_score</span><span class="t-muted">:</span>       <span class="t-val">74</span>
+<span class="t-key">readiness_score_delta</span><span class="t-muted">:</span> <span class="t-str">+12</span>
 
-<span class="t-head">Recommended First Project</span>
-<span class="t-str">"Automated Weekly Campaign
- Report Generator"</span>
-<span class="t-key">feasibility</span><span class="t-muted">:</span> <span class="t-val">9</span>
-<span class="t-key">roi_score</span><span class="t-muted">:</span>   <span class="t-val">9</span>
-<span class="t-key">timeline</span><span class="t-muted">:</span>   <span class="t-str">2–3 weeks</span>
-<span class="t-key">cost_tier</span><span class="t-muted">:</span>  <span class="t-str">$</span>
+<span class="t-head">evolution_summary</span>
+<span class="t-str">"Report generator shipped Week 4.
+ Data blocker resolved — Q&A
+ agent now feasible."</span>
 
-<span class="t-head">Quick Win — Day 1</span>
-<span class="t-str">"Claude API for product
- description drafts — zero
- infra, value in one day"</span></pre>
+<span class="t-key">milestone_shifts</span><span class="t-muted">:</span>
+  <span class="t-str">"Week 3–6 removed (shipped)"</span>
+<span class="t-key">dropped_use_cases</span><span class="t-muted">:</span> <span class="t-val">[]</span></pre>
           </div>
         </div>
       </div>

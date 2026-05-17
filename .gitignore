@@ -1,5 +1,6 @@
-# Spec
+# Specs
 spec-ai-use-case-scoper.md
+spec-v2-enterprise-context-memory.md
 
 # Environment
 .env
@@ -17,8 +18,11 @@ build/
 venv/
 env/
 
-# Outputs
+# Outputs & runtime data
 outputs/
+uploads/
+chroma_store/
+*.db
 
 # Docker
 .dockerignore

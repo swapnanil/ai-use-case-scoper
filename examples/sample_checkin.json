@@ -1,0 +1,33 @@
+{
+  "company_id": "replace-with-your-company-id",
+  "parent_session_id": "replace-with-your-session-id",
+  "notes": "We shipped the automated weekly report generator in Week 4 — it's live for all 8 account managers now and saving roughly 3-4 hours each per week. The campaign Q&A agent is still blocked: our data team discovered that our Postgres campaign data has inconsistent schema across clients (some have impression data, some don't), so we can't build a reliable RAG layer over it yet. On the positive side, we hired a backend engineer last month who has some experience with LLM APIs — not a full ML engineer but she's set up our first Claude API integration. We also lost a major client in Q2 which reduced our budget slightly. On the compliance front, our legal team just flagged that we need to be CCPA-compliant too since we have US clients — this is new.",
+  "outcome_updates": [
+    {
+      "session_id": "replace-with-your-session-id",
+      "use_case_title": "Automated Weekly Campaign Report Generator",
+      "status": "shipped",
+      "actual_timeline": "4 weeks",
+      "notes": "Live for all 8 AMs. Saving 3-4 hrs/week per AM. Positive feedback from clients."
+    },
+    {
+      "session_id": "replace-with-your-session-id",
+      "use_case_title": "Campaign Q&A Agent",
+      "status": "blocked",
+      "blocker": "Inconsistent Postgres schema across clients — impression data missing for ~30% of clients",
+      "notes": "Data team estimates 3-4 weeks to normalise schema before RAG layer is viable"
+    },
+    {
+      "session_id": "replace-with-your-session-id",
+      "use_case_title": "New Account Manager Onboarding Knowledge Base",
+      "status": "not_started",
+      "notes": "Not yet started — deprioritised in favour of report generator"
+    }
+  ],
+  "profile_changes": {
+    "budget_tier": "growth",
+    "ai_experience": "basic"
+  },
+  "new_constraints": ["CCPA"],
+  "timeline_pressure": "pilot_in_90_days"
+}
