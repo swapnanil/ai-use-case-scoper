@@ -1,0 +1,155 @@
+{
+  "executive_summary": "Your Ad-Tech company has a strong foundation for AI adoption — medium data maturity, existing API integrations, and a clear pain point in manual reporting. The highest-ROI first project is automated weekly campaign report generation: it solves an immediate, quantified problem (4-6 hours/AM/week), requires no new data infrastructure, and delivers visible value to clients within 3 weeks. With GDPR compliance, we recommend Anthropic's API with a signed DPA over OpenAI.",
+  "strategic_assessment": "You are in a good position to start AI. You have usable data, real pain points, and a growth budget. The absence of ML engineers means we stay with managed API approaches — no fine-tuning, no self-hosted models. Your GDPR requirement is manageable with Anthropic's DPA. The 90-day pilot timeline is realistic for the recommended first project.",
+  "use_cases": [
+    {
+      "title": "Automated Weekly Campaign Report Generation",
+      "description": "Build a Claude-powered report generator that queries your campaign APIs (Google Ads, Meta), pulls last week's performance data, and drafts a structured client-ready report in your company's format. Account managers review and send — no more starting from scratch.",
+      "business_value": "Saves 4-6 hours per account manager per week. At 20 AMs, that's 80-120 hours/week recovered — equivalent to 2-3 FTEs. Clients receive consistent, faster reporting.",
+      "feasibility_score": 9,
+      "roi_score": 9,
+      "risk_score": 2,
+      "priority_score": 9,
+      "ai_approach": ["LLM API", "Structured Output"],
+      "estimated_complexity": "low",
+      "estimated_timeline": "3 weeks",
+      "estimated_cost_tier": "$",
+      "data_requirements": "Campaign performance data from Google Ads API and Meta Ads API. You already have this — it just needs aggregation.",
+      "integration_requirements": ["Google Ads API", "Meta Ads API", "Email/Slack for delivery"],
+      "team_requirements": "1 backend engineer (Python). No ML expertise required.",
+      "key_risks": [
+        "AI-generated insights may miss nuance that an experienced AM would catch",
+        "Clients may be unhappy if report quality drops vs. human-crafted versions"
+      ],
+      "mitigation": [
+        "AM review step before sending — AI drafts, human approves",
+        "Start with internal reports only, move to client-facing after 2-week internal pilot"
+      ]
+    },
+    {
+      "title": "Campaign Q&A Agent for Account Managers",
+      "description": "A natural language interface over campaign data that lets AMs ask questions like 'Why did CTR drop last week?' or 'Which creatives are outperforming?' — and get instant, data-grounded answers. Reduces client response latency from hours to seconds.",
+      "business_value": "Eliminates ad-hoc data analysis time (~2 hours/AM/week). Enables real-time client Q&A during calls. Competitive differentiator for client retention.",
+      "feasibility_score": 7,
+      "roi_score": 8,
+      "risk_score": 4,
+      "priority_score": 8,
+      "ai_approach": ["RAG", "LLM API", "Tool Use"],
+      "estimated_complexity": "medium",
+      "estimated_timeline": "6-8 weeks",
+      "estimated_cost_tier": "$$",
+      "data_requirements": "Structured campaign metrics database. Medium data maturity means some data normalisation needed first.",
+      "integration_requirements": ["Campaign data warehouse", "Slack or internal web app"],
+      "team_requirements": "1-2 backend engineers. Some prompt engineering skill needed.",
+      "key_risks": [
+        "Hallucinated metrics in a client-facing context would be damaging",
+        "Keeping data fresh requires robust pipeline"
+      ],
+      "mitigation": [
+        "Ground all answers in retrieved data — never let model fabricate numbers",
+        "Display data sources alongside answers so AMs can verify"
+      ]
+    },
+    {
+      "title": "New Account Manager Onboarding Knowledge Base",
+      "description": "A RAG system over your internal playbooks, campaign case studies, and client history that new AMs can query to get up to speed. Reduces time-to-productivity from 3 months to 6 weeks.",
+      "business_value": "6 weeks of productivity recovered per new hire. At 8 hires per year, that's 48 weeks of additional AM capacity. Reduced senior AM mentoring load.",
+      "feasibility_score": 7,
+      "roi_score": 7,
+      "risk_score": 3,
+      "priority_score": 7,
+      "ai_approach": ["RAG", "LLM API"],
+      "estimated_complexity": "medium",
+      "estimated_timeline": "5-7 weeks",
+      "estimated_cost_tier": "$",
+      "data_requirements": "Internal documents: playbooks, case studies, SOPs, client briefs. Must be digitised and centralised.",
+      "integration_requirements": ["SharePoint or Confluence", "Slack or internal portal"],
+      "team_requirements": "1 backend engineer. Significant content curation effort from senior AMs.",
+      "key_risks": [
+        "Document quality is inconsistent — garbage in, garbage out",
+        "New AMs may over-rely on AI and miss nuance"
+      ],
+      "mitigation": [
+        "Content audit sprint before building RAG — only index high-quality docs",
+        "Frame as 'first draft answer' tool, not authoritative source"
+      ]
+    }
+  ],
+  "recommended_first_project": "Automated Weekly Campaign Report Generation — lowest risk, fastest ROI, zero new infrastructure needed. Ship in 3 weeks and prove AI value before committing to more complex projects.",
+  "roadmap_90_day": [
+    {
+      "week": "Week 1-2",
+      "phase": "Discovery & Setup",
+      "deliverables": [
+        "Audit Google Ads and Meta Ads API access",
+        "Define report template with 3 representative AMs",
+        "Set up Anthropic API account with GDPR DPA signed",
+        "Build data aggregation script for campaign metrics"
+      ],
+      "success_criteria": "Data pipeline runs end-to-end, pulling last 7 days of campaign data for 3 test accounts"
+    },
+    {
+      "week": "Week 3-6",
+      "phase": "Build & Internal Pilot",
+      "deliverables": [
+        "Build Claude-powered report generation function",
+        "Create AM review interface (simple web form or Slack bot)",
+        "Run 2-week internal pilot with 3 AMs on their own accounts",
+        "Collect AM feedback and iterate on prompt/format"
+      ],
+      "success_criteria": "3 AMs generating draft reports in <5 minutes. AM satisfaction score >7/10. Zero reports sent to clients without AM review."
+    },
+    {
+      "week": "Week 7-10",
+      "phase": "Client Rollout",
+      "deliverables": [
+        "Roll out to all 20 account managers",
+        "Measure time savings (target: 4+ hours/AM/week)",
+        "Begin scoping Campaign Q&A Agent based on learnings",
+        "GDPR data processing audit"
+      ],
+      "success_criteria": "80%+ of AMs using the tool weekly. Measurable reduction in reporting time. Zero client complaints about report quality."
+    },
+    {
+      "week": "Week 11-13",
+      "phase": "Measure & Plan Next",
+      "deliverables": [
+        "ROI report: time saved, AM satisfaction, client feedback",
+        "Prioritise next use case (Campaign Q&A Agent or Onboarding KB)",
+        "Present results to leadership with funding ask for Phase 2"
+      ],
+      "success_criteria": "Documented ROI case. Leadership approval to proceed to Phase 2 use case."
+    }
+  ],
+  "quick_wins": [
+    "Use Claude API to generate one-paragraph campaign summaries for your top 5 clients this week — no infrastructure needed, just a script",
+    "Ask AMs to document their top 10 most-asked client questions — this seeds the Q&A agent backlog",
+    "Sign Anthropic GDPR DPA in week 1 — unblocks everything, takes 1 hour"
+  ],
+  "things_to_avoid": [
+    "Don't start with the Campaign Q&A Agent — it's more complex and you need to prove AI value first with something simpler",
+    "Don't use OpenAI API — you have GDPR requirements and need a DPA. Anthropic provides this.",
+    "Don't skip the AM review step on reports — one bad AI-generated insight sent to a client can damage the relationship",
+    "Don't try to build all 3 use cases at once — you'll ship none of them properly"
+  ],
+  "questions_to_answer_first": [
+    "Do you have API access to Google Ads and Meta Ads, or are you pulling data manually?",
+    "Who is the internal champion for this project — an AM lead or a technical lead?",
+    "What does a 'good' weekly report look like? Can you show us 3 examples of reports your best AMs produce?",
+    "How are reports currently delivered — email, PDF, in the client portal?",
+    "What's the GDPR data controller/processor relationship with your clients — do they need to be notified that AI touches their data?"
+  ],
+  "readiness_score": 72,
+  "readiness_blockers": [
+    "GDPR DPA with Anthropic not yet signed",
+    "No ML engineers on team — limits to managed API approaches only",
+    "Data exists but is not yet aggregated in a single place for AI consumption"
+  ],
+  "readiness_accelerators": [
+    "Medium data maturity — data exists and is mostly accessible",
+    "Existing API integrations with ad platforms — no data extraction problem",
+    "Growth budget — can afford API costs and engineering time",
+    "Clear, quantified pain points — easy to measure ROI",
+    "Basic AI experience — team understands APIs and is not starting from zero"
+  ]
+}

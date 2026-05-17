@@ -1,0 +1,21 @@
+{
+  "industry": "E-commerce",
+  "company_size": "smb",
+  "geography": "US",
+  "tech_stack": ["Shopify", "Python", "Klaviyo", "Gorgias", "Postgres"],
+  "data_maturity": "high",
+  "ai_experience": "none",
+  "engineering_team_size": 6,
+  "has_ml_engineers": false,
+  "budget_tier": "bootstrap",
+  "ai_ambition": "Automate as much customer-facing AI as possible — support, product content, personalisation. We need to show AI impact fast to satisfy our investors.",
+  "pain_points": [
+    "Support team of 4 is overwhelmed — 300+ tickets per day with 18-hour average response time",
+    "Product descriptions for new SKUs take 2 hours per item — we launch 50 new products per month",
+    "Personalisation is manual — same emails go to all 80k customers regardless of behaviour"
+  ],
+  "compliance_requirements": [],
+  "timeline_pressure": "urgent",
+  "existing_ai_initiatives": null,
+  "competitors_doing": "Direct competitors are using AI chatbots for support and have cut response times to under 2 hours"
+}

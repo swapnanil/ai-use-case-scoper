@@ -1,0 +1,21 @@
+{
+  "industry": "Ad-Tech",
+  "company_size": "mid_market",
+  "geography": "US + EU",
+  "tech_stack": ["Python", "AWS", "Postgres", "Salesforce", "Google Ads API", "Meta Ads API"],
+  "data_maturity": "medium",
+  "ai_experience": "basic",
+  "engineering_team_size": 25,
+  "has_ml_engineers": false,
+  "budget_tier": "growth",
+  "ai_ambition": "Use AI to make our account managers more productive — reduce manual reporting work and help them give better real-time insights to clients",
+  "pain_points": [
+    "Manual weekly reporting takes 4-6 hours per account manager",
+    "Campaign insights are delayed — clients ask questions we can't answer in real-time",
+    "New account managers take 3 months to get productive"
+  ],
+  "compliance_requirements": ["GDPR"],
+  "timeline_pressure": "pilot_in_90_days",
+  "existing_ai_initiatives": "We use some vendor ML APIs for bid optimisation but nothing custom",
+  "competitors_doing": "Competitors are starting to offer AI-generated campaign summary reports"
+}

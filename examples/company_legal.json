@@ -1,0 +1,21 @@
+{
+  "industry": "Legal Services",
+  "company_size": "enterprise",
+  "geography": "UK + EU",
+  "tech_stack": ["On-prem servers", "SharePoint", "iManage", "Microsoft 365"],
+  "data_maturity": "low",
+  "ai_experience": "none",
+  "engineering_team_size": 12,
+  "has_ml_engineers": false,
+  "budget_tier": "enterprise",
+  "ai_ambition": "Use AI to help our lawyers review contracts faster and reduce time spent searching for precedents across our document archive",
+  "pain_points": [
+    "Contract review takes 3-5 days per contract — lawyers spend most of this on standard clause identification",
+    "Junior lawyers spend 60% of their time on document search rather than billable work",
+    "Client reporting on matter progress is manual and takes partners 2 hours per week"
+  ],
+  "compliance_requirements": ["GDPR", "data on-prem", "SRA compliance", "data residency"],
+  "timeline_pressure": "production_in_6_months",
+  "existing_ai_initiatives": "Tried a generic GPT integration 18 months ago — was not production-ready and was quietly shelved due to hallucination concerns",
+  "competitors_doing": "Several Magic Circle firms have announced internal AI tools for contract review"
+}
